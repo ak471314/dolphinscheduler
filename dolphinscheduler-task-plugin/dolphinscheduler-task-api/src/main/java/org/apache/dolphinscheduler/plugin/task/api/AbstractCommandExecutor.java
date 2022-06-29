@@ -58,6 +58,11 @@ public abstract class AbstractCommandExecutor {
      * rules for extracting application ID
      */
     protected static final Pattern APPLICATION_REGEX = Pattern.compile(TaskConstants.APPLICATION_REGEX);
+    
+    /**
+     * rules for extracting Var Pool
+     */
+    protected static final Pattern SETVALUE_REGEX = Pattern.compile(TaskConstants.SETVALUE_REGEX);
 
     protected StringBuilder varPool = new StringBuilder();
     /**
@@ -317,8 +322,8 @@ public abstract class AbstractCommandExecutor {
                 String line;
                 logBuffer.add("welcome to use bigdata scheduling system...");
                 while ((line = inReader.readLine()) != null) {
-                    if (line.startsWith("${setValue(")) {
-                        varPool.append(line, "${setValue(".length(), line.length() - 2);
+                    if (line.startsWith("${setValue(") || line.startsWith("#{setValue(")) {
+                        varPool.append(findVarPool(line));
                         varPool.append("$VarPool$");
                     } else {
                         logBuffer.add(line);
@@ -402,6 +407,19 @@ public abstract class AbstractCommandExecutor {
         }
 
         return lineList;
+    }
+    
+    /**
+     * find var pool
+     * @param line
+     * @return
+     */
+    private String findVarPool(String line) {
+        Matcher matcher = SETVALUE_REGEX.matcher(line);
+        if (matcher.find()) {
+            return matcher.group(1);
+        }
+        return null;
     }
 
     /**

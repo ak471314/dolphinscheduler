@@ -25,6 +25,7 @@ public class TaskConstants {
 
     public static final String APPLICATION_REGEX = "application_\\d+_\\d+";
 
+    public static final String SETVALUE_REGEX = "[\\$#]\\{setValue\\(([^)]*)\\)}";
     /**
      * string false
      */
