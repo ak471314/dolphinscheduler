@@ -73,6 +73,28 @@
         @closeVersion="closeVersion"
       ></m-versions>
     </el-drawer>
+    <el-drawer :visible.sync="taskVersionDrawer" size="" :with-header="false">
+      <!-- fix the bug that Element-ui(2.13.2) auto focus on the first input -->
+      <div style="width: 0px; height: 0px; overflow: hidden">
+        <el-input type="text" />
+      </div>
+      <m-task-versions
+        :taskVersionData="taskVersionData"
+        :isInstance="type === 'instance'"
+        @mVersionGetTaskDefinitionVersionsPage="getTaskVersions"
+        @mVersionDiffTaskDefinitionVersion="diffTaskVersions"
+        @closeTaskVersion="closeTaskVersion"
+      ></m-task-versions>
+    </el-drawer>
+    <el-dialog title="Code Diff" :visible.sync="codeDiffDrawer" size="" width="auto">
+      <div>
+        <m-code-diff
+        :oldValue="codeDiffOldValue"
+        :newValue="codeDiffNewValue"
+        @close="closeCodeDiffs"
+        ></m-code-diff>
+      </div>
+    </el-dialog>
     <m-log
         v-if="type === 'instance' && logDialog"
         :item="logTaskInstance"
@@ -94,6 +116,8 @@
   import edgeEditModel from './canvas/edgeEditModel.vue'
   import mVersions from '../../projects/pages/definition/pages/list/_source/versions.vue'
   import mLog from './formModel/log.vue'
+  import mTaskVersions from '../_source/formModel/tasks/_source/taskVersions.vue'
+  import mCodeDiff from '../_source/formModel/codeDiff.vue'
 
   const DEFAULT_NODE_DATA = {
     id: null,
@@ -112,7 +136,9 @@
       mStart,
       edgeEditModel,
       mVersions,
-      mLog
+      mLog,
+      mTaskVersions,
+      mCodeDiff
     },
     provide () {
       return {
@@ -150,6 +176,26 @@
           pageNo: null,
           pageSize: null
         },
+        // whether the task version drawer is visible
+        taskDefinitionCode: 0,
+        taskDefinitionData: Object,
+        taskVersionDrawer: false,
+        taskVersionData: {
+          taskDefinition: {
+            id: null,
+            version: '',
+            taskData: Object,
+            releaseState: ''
+          },
+          taskDefinitionVersions: [],
+          total: null,
+          pageNo: null,
+          pageSize: null
+        },
+        // code diff
+        codeDiffDrawer: false,
+        codeDiffOldValue: '',
+        codeDiffNewValue: '',
         // the task status refresh timer
         statusTimer: null,
         // the process instance id
@@ -216,7 +262,8 @@
         'genTaskCodeList',
         'switchProcessDefinitionVersion',
         'getProcessDefinitionVersionsPage',
-        'deleteProcessDefinitionVersion'
+        'deleteProcessDefinitionVersion',
+        'getTaskDefinitionVersionsPage'
       ]),
       ...mapMutations('dag', [
         'addTask',
@@ -683,6 +730,71 @@
           .catch((e) => {
             this.$message.error(e.msg || '')
           })
+      },
+      /**
+       * change task definition version
+       */
+      showTaskVersions () {
+        this.getTaskDefinitionVersionsPage({
+          pageNo: 1,
+          pageSize: 15,
+          code: this.taskDefinitionCode
+        })
+          .then((res) => {
+            let taskDefinitionVersions = res.data.totalList
+            let total = res.data.total
+            let pageSize = res.data.pageSize
+            let pageNo = res.data.currentPage
+            this.taskVersionData.taskDefinition.code = this.taskDefinitionCode
+            this.taskVersionData.taskDefinition.taskData = this.taskDefinitionData
+            this.taskVersionData.taskDefinition.version = this.taskDefinitionData.version
+            this.taskVersionData.taskDefinition.releaseState = this.releaseState
+            this.taskVersionData.taskDefinitionVersions =
+              taskDefinitionVersions
+            this.taskVersionData.total = total
+            this.taskVersionData.pageNo = pageNo
+            this.taskVersionData.pageSize = pageSize
+            this.taskVersionDrawer = true
+          })
+          .catch((e) => {
+            this.$message.error(e.msg || '')
+          })
+      },
+      closeTaskVersion () {
+        this.taskVersionDrawer = false
+      },
+      diffTaskVersions ({ versionDataString, taskDataString }) {
+        this.codeDiffNewValue = taskDataString
+        this.codeDiffOldValue = versionDataString
+        this.showCodeDiffs()
+      },
+      getTaskVersions ({ pageNo, pageSize, taskDefinitionCode }) {
+        this.getTaskDefinitionVersionsPage({
+          pageNo: pageNo,
+          pageSize: pageSize,
+          code: taskDefinitionCode
+        })
+          .then((res) => {
+            this.taskVersionData.taskDefinitionVersions = res.data.totalList
+            this.taskVersionData.total = res.data.total
+            this.taskVersionData.pageSize = res.data.pageSize
+            this.taskVersionData.pageNo = res.data.currentPage
+          })
+          .catch((e) => {
+            this.$message.error(e.msg || '')
+          })
+      },
+      /**
+       * Code Diffs
+       */
+      showCodeDiffs () {
+        this.codeDiffDrawer = true
+      },
+
+      closeCodeDiffs () {
+        this.codeDiffDrawer = false
+        this.codeDiffOldValue = ''
+        this.codeDiffNewValue = ''
       },
       /**
        * Log dialog

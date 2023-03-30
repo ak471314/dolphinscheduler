@@ -17,7 +17,18 @@
 <template>
   <div class="form-model-wrapper" v-clickoutside="_handleClose">
     <div class="title-box">
-      <span class="name">{{ $t("Current node settings") }}</span>
+      <span class="name" >{{ $t("Current node settings") }}
+       <el-button
+         class="toolbar-el-btn"
+         v-if="!taskInstance"
+         type="primary"
+         size="mini"
+         icon="el-icon-info"
+         @click="showTaskVersions"
+       >{{ $t("Version Info") }}</el-button
+       >
+      </span>
+
       <span class="go-subtask">
         <!-- Component can't pop up box to do component processing -->
         <m-log
@@ -457,6 +468,7 @@
         desc: '',
         // Node echo data
         backfillItem: {},
+        taskData: {},
         cacheBackfillItem: {},
         // Resource(list)
         resourcesList: [],
@@ -818,6 +830,12 @@
           fEdge && canvas.setEdgeLabel(fEdge.id, this.$t('Failed'))
         }
       },
+
+      showTaskVersions () {
+        this.dagChart.taskDefinitionCode = this.code
+        this.dagChart.taskDefinitionData = this.taskData
+        this.dagChart.showTaskVersions()
+      },
       /**
        * Submit verification
        */
@@ -906,6 +924,7 @@
             const backfillItem = this.taskToBackfillItem(task)
             o = backfillItem
             this.backfillItem = backfillItem
+            this.taskData = task
             this.isNewCreate = false
           }
         })

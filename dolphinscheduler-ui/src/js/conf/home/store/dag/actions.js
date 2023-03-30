@@ -81,6 +81,19 @@ export default {
   },
 
   /**
+   * get task definition versions pagination info
+   */
+  getTaskDefinitionVersionsPage ({ state }, payload) {
+    return new Promise((resolve, reject) => {
+      io.get(`projects/${state.projectCode}/task-definition/${payload.code}/versions`, payload, res => {
+        resolve(res)
+      }).catch(e => {
+        reject(e)
+      })
+    })
+  },
+
+  /**
    * switch process definition version
    */
   switchProcessDefinitionVersion ({ state }, payload) {
